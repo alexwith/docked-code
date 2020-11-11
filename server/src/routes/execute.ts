@@ -5,8 +5,6 @@ const router = express.Router();
 
 router.post('/execute', (req, res) => {
   const { root, stdin, files }: {root: string, stdin:string, files: File[]} = req.body;
-
-  const dockable = new Dockable(root, stdin, files);
   const callbackContainer = {
     callback: (stdout: string, stderr: string, executionTime: string) => {
       res.status(200).send({
@@ -16,7 +14,8 @@ router.post('/execute', (req, res) => {
       });
     }
   } 
-  dockable.execute(callbackContainer);
+  const dockable = new Dockable(root, stdin, files, callbackContainer);
+  dockable.execute();
 });
 
 export default router;
