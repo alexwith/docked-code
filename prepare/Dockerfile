@@ -1,24 +1,9 @@
-FROM ubuntu:18.04
+FROM alpine:3.12
 
 LABEL maintainer="alexwith"
 
-RUN apt-get update
+RUN apk add python3
 
-RUN apt-get install -y yarn
-RUN apt-get install python
-
-# Install OpenJDK-8
-RUN apt-get update && \
-  apt-get install -y openjdk-8-jdk && \
-  apt-get install -y ant && \
-  apt-get clean;
-
-# Fix certificate issues
-RUN apt-get update && \
-  apt-get install ca-certificates-java && \
-  apt-get clean && \
-  update-ca-certificates -f;
-
-# Setup JAVA_HOME -- useful for docker commandline
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
-RUN export JAVA_HOME
+RUN apk --update add openjdk8
+ENV JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
+ENV PATH="$JAVA_HOME/bin:${PATH}"

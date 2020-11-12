@@ -4,7 +4,7 @@ import sys
 import time
 import subprocess
 
-root_location = "/code/project/" + sys.argv[1]
+root_location = f"/code/project/{sys.argv[1]}"
 command = sys.argv[2]
 
 started = int(time.time() * 1000)
@@ -18,13 +18,13 @@ def modify_trail(command, trail):
 
 def compile_code(root_location):
     if (command == "java"):
-        os.system("javac " + root_location)
+        os.system(f"javac {root_location}")
 
 
 def run(command, trail, modify_trail):
     modified_trail = modify_trail(command, trail)
-    os.system(command + " " + modified_trail +
-              " < /code/stdin.txt > /code/stdout.txt 2> /code/stderr.txt")
+    os.system(
+        f"{command} {modified_trail} < /code/stdin.txt > /code/stdout.txt 2> /code/stderr.txt")
 
 
 compile_code(root_location)
@@ -33,5 +33,5 @@ run(command, root_location, modify_trail)
 ended = int(time.time() * 1000)
 
 post = open("code/post.txt", "w")
-post.write("time-" + str(ended - started))
+post.write(f"time-{ended - started}")
 post.close()

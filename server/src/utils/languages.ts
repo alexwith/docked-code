@@ -9,7 +9,7 @@ const languages: Language[] = [
   {
     name: "python",
     extension: "py",
-    command: "python",
+    command: "python3",
     compile: false
   },
   {
