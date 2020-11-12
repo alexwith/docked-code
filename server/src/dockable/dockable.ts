@@ -1,4 +1,4 @@
-import fs, { promises as fsp } from "fs";
+import fs, { promises as fsp, stat } from "fs";
 import { exec } from 'child_process';
 import {v4 as uuid} from 'uuid';
 import { getLanguage } from "../utils/languages";
@@ -85,42 +85,44 @@ class Dockable {
     let pending = 0;
     const id = setInterval(async () => {
       pending += 1;
-      const { stdout, stderr, executionTime }: Result = await this.findResult(id).catch(() => {
-        return {
-          stdout: "bob",
-          stderr: "bob",
-          executionTime: "bob"
-        }
-      });
-      this.callback.callback(stdout, stderr, executionTime);
+      const { stdout, stderr, executionTime }: Result = await this.findResult(id);
+      if (stdout !== "400") {
+        this.callback.callback(stdout, stderr, executionTime);
+        this.dispose(id);
+      }
       if (pending >= TIMEOUT_BREAK) {
-        this.dispose(id)
+        this.dispose(id);
+        this.callback.callback("", "Timed out", "");
       }
     }, 1000)
   }
 
   private async findResult(id: NodeJS.Timeout): Promise<Result> {
       const read = async (name: string): Promise<string> => {
-        return fsp.readFile(`${this.volume}/${name}.txt`, "utf-8").then((content) => {
-          return content;
-        }).catch((error) => {
-          throw error;
-        })
+        return new Promise(async (resolve) => {
+          try {
+            const content = await fsp.readFile(`${this.volume}/${name}.txt`, "utf-8");
+            resolve(content);
+          } catch (_) {
+            resolve("400");
+          } 
+        });
       }
       const stdout = await read("stdout");
       const post = await read("post");
       const time = post.split("-")[1];
       const stderr = await read("stderr");
-      this.dispose(id);
-      return {
-        stdout,
-        stderr,
-        executionTime: `${time ? time : "?"}ms`
-      }
+      return new Promise((resolve) => {
+        resolve({
+          stdout,
+          stderr,
+          executionTime: `${time ? time : "?"}ms`
+        });
+      });
   } 
 
   private dispose(id: NodeJS.Timeout) {
-    //exec(`rm -rf ${this.volume}`)
+    exec(`rm -rf ${this.volume}`)
     clearInterval(id);
   }
 }

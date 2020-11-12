@@ -4,27 +4,31 @@ import sys
 import time
 import subprocess
 
-root = sys.argv[1]
+root_location = "/code/project/" + sys.argv[1]
 command = sys.argv[2]
 
 started = int(time.time() * 1000)
-root_location = "/code/project/" + root
 
 
-def compile_code():
+def modify_trail(command, trail):
+    if (command == "java"):
+        return "-cp ./code/project Main"
+    return trail
+
+
+def compile_code(root_location):
     if (command == "java"):
         os.system("javac " + root_location)
 
 
-def run():
-    if (command == "java"):
-        root_location = "-cp ./code/project Main"
-    os.system(command + " " + root_location +
+def run(command, trail, modify_trail):
+    modified_trail = modify_trail(command, trail)
+    os.system(command + " " + modified_trail +
               " < /code/stdin.txt > /code/stdout.txt 2> /code/stderr.txt")
 
 
-compile_code()
-run()
+compile_code(root_location)
+run(command, root_location, modify_trail)
 
 ended = int(time.time() * 1000)
 
