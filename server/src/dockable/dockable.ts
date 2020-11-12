@@ -1,4 +1,4 @@
-import fs, { promises as fsp, stat } from "fs";
+import fs, { promises as fsp, } from "fs";
 import { exec } from 'child_process';
 import {v4 as uuid} from 'uuid';
 import { getLanguage } from "../utils/languages";
@@ -46,7 +46,7 @@ class Dockable {
     return __dirname.replace("/dist/dockable", replace);
   }
 
-  public validateFiles(files: File[]): boolean {
+  public validateFiles(_: File[]): boolean {
     return true;
   }
 
@@ -76,8 +76,8 @@ class Dockable {
       this.callback.callback("", "Unable to find a language corresponding to the specified extension.", "?ms");
       return;
     }
-    const { command, compile } = language;
-    const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${command}`;
+    const { name, command } = language;
+    const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${name} ${command}`;
     exec(statement);
   }
 
@@ -85,7 +85,7 @@ class Dockable {
     let pending = 0;
     const id = setInterval(async () => {
       pending += 1;
-      const { stdout, stderr, executionTime }: Result = await this.findResult(id);
+      const { stdout, stderr, executionTime }: Result = await this.findResult();
       if (stdout !== "400") {
         this.callback.callback(stdout, stderr, executionTime);
         this.dispose(id);
@@ -97,7 +97,7 @@ class Dockable {
     }, 1000)
   }
 
-  private async findResult(id: NodeJS.Timeout): Promise<Result> {
+  private async findResult(): Promise<Result> {
       const read = async (name: string): Promise<string> => {
         return new Promise(async (resolve) => {
           try {
@@ -122,7 +122,7 @@ class Dockable {
   } 
 
   private dispose(id: NodeJS.Timeout) {
-    exec(`rm -rf ${this.volume}`)
+    //exec(`rm -rf ${this.volume}`)
     clearInterval(id);
   }
 }

@@ -17,6 +17,24 @@ const languages: Language[] = [
     extension: "java",
     command: "java",
     compile: true
+  },
+  {
+    name: "c++",
+    extension: "cpp",
+    command: "none",
+    compile: true
+  },
+  {
+    name: "c",
+    extension: "c",
+    command: "none",
+    compile: true
+  },
+  {
+    name: "go",
+    extension: "go",
+    command: "go",
+    compile: true
   }
 ]
 
