@@ -113,6 +113,8 @@ class Dockable {
             if (stdout !== "400") {
               this.callback.callback(stdout, stderr, executionTime);
               this.dispose();
+            } else {
+              this.callback.callback("", "Something went horribly wrong.", "")
             }
           }
         })
