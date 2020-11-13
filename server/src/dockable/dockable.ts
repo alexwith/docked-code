@@ -2,6 +2,7 @@ import fs, { promises as fsp, } from "fs";
 import { exec } from 'child_process';
 import {v4 as uuid} from 'uuid';
 import { getLanguage } from "../utils/languages";
+import Dockerode from 'dockerode';
 
 const TIMEOUT_BREAK = 5;
 
@@ -30,6 +31,8 @@ class Dockable {
   encodedFiles: string;
   payload: string;
   volume: string;
+  containerId: string;
+  eventResult: NodeJS.ReadableStream | undefined;
 
   constructor(root: string, stdin: string, files: File[], callback: CallbackContainer) {
     this.id = uuid();
@@ -53,7 +56,7 @@ class Dockable {
   public async execute() {
     await this.createVolume();
     this.dock();
-    this.waitResult();
+    this.sniff();
   }
 
   private createVolume(): Promise<void> {
@@ -88,24 +91,33 @@ class Dockable {
       return trail;
     }
     const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${name} ${command} '${fileTrail()}'`;
-    exec(statement);
+    exec(statement, (_, containerId) => {
+      this.containerId = containerId;
+    });
   }
 
-  private async waitResult() {
-    let pending = 0;
-    const id = setInterval(async () => {
-      console.log("run")
-      pending += 1;
-      const { stdout, stderr, executionTime }: Result = await this.findResult();
-      if (stdout !== "400") {
-        this.callback.callback(stdout, stderr, executionTime);
-        this.dispose(id);
+  private sniff() {
+    const docker = new Dockerode();
+    docker.getEvents((error, result) => {
+      this.eventResult = result;
+      if (error) {
+
+      } else {
+        result?.on('data', async (chunk) => {
+          const { id, Action: action } = JSON.parse(chunk.toString('utf8'));
+          if (action !== "die") {
+            return;
+          }
+          if (this.containerId && this.containerId.includes(id)) {
+            const { stdout, stderr, executionTime }: Result = await this.findResult();
+            if (stdout !== "400") {
+              this.callback.callback(stdout, stderr, executionTime);
+              this.dispose();
+            }
+          }
+        })
       }
-      if (pending >= TIMEOUT_BREAK) {
-        this.dispose(id);
-        this.callback.callback("", "Timed Out", "");
-      }
-    }, 1000);
+    })
   }
 
   private async findResult(): Promise<Result> {
@@ -132,9 +144,8 @@ class Dockable {
       });
   } 
 
-  private dispose(id: NodeJS.Timeout) {
+  private dispose() {
     exec(`rm -rf ${this.volume}`);
-    clearInterval(id);
   }
 }
 
