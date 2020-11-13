@@ -122,7 +122,7 @@ class Dockable {
   } 
 
   private dispose(id: NodeJS.Timeout) {
-    //exec(`rm -rf ${this.volume}`)
+    exec(`rm -rf ${this.volume}`)
     clearInterval(id);
   }
 }

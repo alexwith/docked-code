@@ -2,24 +2,22 @@ FROM alpine:3.12
 
 LABEL maintainer="alexwith"
 
+RUN apk add yarn
+RUN apk add nodejs
+
 # Setup Python 3
 RUN apk add python3
 
-# Setup Java 8
+# Setup Java 8 - all .java include in trail
 RUN apk --update add openjdk8
 ENV JAVA_HOME=/usr/lib/jvm/java-1.8-openjdk
 ENV PATH="$JAVA_HOME/bin:${PATH}"
 
-# Setup c++
+# Setup C++ - all .cpp include in trail
 RUN apk add g++ 
 
-# Setup C
+# Setup C - all .c include in trail
 RUN apk add gcc
 
-# Steup GoLang
-RUN apk --update add go
-ENV GOROOT=/usr/lib/go
-ENV GOPATH=/go
-ENV PATH=/go/bin/:$PATH
-
-RUN mkdir -p ${GOPATH}/src ${GOPATH}/bin
+# Setup TypeScript
+RUN yarn global add typescript

@@ -1,6 +1,7 @@
 class Main {
 
   public static void main(String[] args) {
-    System.out.println("test");
+    Person person = new Person("bob");
+    System.out.println("name: " + person.getName());
   }
 }

@@ -31,10 +31,16 @@ const languages: Language[] = [
     compile: true
   },
   {
-    name: "go",
-    extension: "go",
-    command: "go",
+    name: "typescript",
+    extension: "ts",
+    command: "node",
     compile: true
+  },
+  {
+    name: "javascript",
+    extension: "js",
+    command: "node",
+    compile: false
   }
 ]
 
