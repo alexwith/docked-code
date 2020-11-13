@@ -76,14 +76,25 @@ class Dockable {
       this.callback.callback("", "Unable to find a language corresponding to the specified extension.", "?ms");
       return;
     }
-    const { name, command } = language;
-    const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${name} ${command}`;
+    const { name, command, extension: langExtension } = language;
+    const fileTrail = (): string => {
+      let trail = `code/project/${this.root}`;
+      this.files.forEach((file) => {
+        const { name, extension } = file;
+        if (extension === langExtension) {
+          trail += ` code/project/${name}.${extension}`;
+        }
+      })
+      return trail;
+    }
+    const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${name} ${command} '${fileTrail()}'`;
     exec(statement);
   }
 
-  private waitResult() {
+  private async waitResult() {
     let pending = 0;
     const id = setInterval(async () => {
+      console.log("run")
       pending += 1;
       const { stdout, stderr, executionTime }: Result = await this.findResult();
       if (stdout !== "400") {
@@ -92,9 +103,9 @@ class Dockable {
       }
       if (pending >= TIMEOUT_BREAK) {
         this.dispose(id);
-        this.callback.callback("", "Timed out", "");
+        this.callback.callback("", "Timed Out", "");
       }
-    }, 1000)
+    }, 1000);
   }
 
   private async findResult(): Promise<Result> {
@@ -116,13 +127,13 @@ class Dockable {
         resolve({
           stdout,
           stderr,
-          executionTime: `${time ? time : "?"}ms`
+          executionTime: time ? `${time}ms` : "failed to fetch time",
         });
       });
   } 
 
   private dispose(id: NodeJS.Timeout) {
-    exec(`rm -rf ${this.volume}`)
+    exec(`rm -rf ${this.volume}`);
     clearInterval(id);
   }
 }

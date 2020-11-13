@@ -3,6 +3,7 @@ export interface Language {
   extension: string;
   command: string;
   compile: boolean;
+  fileTrail: boolean;
 }
 
 const languages: Language[] = [
@@ -10,37 +11,43 @@ const languages: Language[] = [
     name: "python",
     extension: "py",
     command: "python3",
-    compile: false
+    compile: false,
+    fileTrail: false
   },
   {
     name: "java",
     extension: "java",
     command: "java",
-    compile: true
+    compile: true,
+    fileTrail: true
   },
   {
     name: "c++",
     extension: "cpp",
     command: "none",
-    compile: true
+    compile: true,
+    fileTrail: false
   },
   {
     name: "c",
     extension: "c",
     command: "none",
-    compile: true
+    compile: true,
+    fileTrail: false
   },
   {
     name: "typescript",
     extension: "ts",
     command: "node",
-    compile: true
+    compile: true,
+    fileTrail: false
   },
   {
     name: "javascript",
     extension: "js",
     command: "node",
-    compile: false
+    compile: false,
+    fileTrail: false
   }
 ]
 
