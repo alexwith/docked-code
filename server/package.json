@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "watch": "tsc -w",
-    "dev": "nodemon dist/index.js"
+    "dev": "nodemon dist/index.js --config nodemon.json"
   },
   "devDependencies": {
     "@types/dockerode": "^3.2.1",

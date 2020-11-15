@@ -39,4 +39,7 @@ def make_request():
     print(json.dumps(request.json(), indent=2))
 
 
-make_request()
+try:
+    make_request()
+except:
+    print("Connection failed.")
