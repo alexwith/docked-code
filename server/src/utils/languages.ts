@@ -38,8 +38,8 @@ const languages: Language[] = [
   {
     name: "typescript",
     extension: "ts",
-    command: "node",
-    compile: true,
+    command: "ts-node",
+    compile: false,
     fileTrail: false
   },
   {

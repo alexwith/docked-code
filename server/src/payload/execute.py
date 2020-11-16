@@ -21,9 +21,6 @@ def final_prefix(language, command, trail):
         return "./a.out"
     elif (language == "go"):
         return f"./{trail}"
-    elif (language == "typescript"):
-        modified_trail = trail.replace(".ts", ".js")
-        return f"{command} {modified_trail}"
     return f"{command} {trail}"
 
 
@@ -35,8 +32,6 @@ def compile_code(language, root_location):
         statement = f"g++ {root_location}"
     elif (language == "c"):
         statement = f"gcc {root_location}"
-    elif (language == "typescript"):
-        statement = f"tsc {root_location}"
     if (statement != None):
         os.system(statement)
 

@@ -21,3 +21,4 @@ RUN apk add gcc
 
 # Setup TypeScript
 RUN yarn global add typescript
+RUN yarn global add ts-node
