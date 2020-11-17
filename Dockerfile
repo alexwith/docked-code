@@ -1,9 +1,10 @@
-FROM alpine:3.12
+FROM node:alpine
 
-LABEL maintainer="alexwith"
+RUN yarn install
 
-RUN apk add yarn
-RUN apk add nodejs
+#############
+# Languages #
+#############
 
 # Setup Python 3
 RUN apk add python3

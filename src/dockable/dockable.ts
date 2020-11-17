@@ -79,7 +79,7 @@ class Dockable {
       this.callback.callback("", "Unable to find a language corresponding to the specified extension.", "?ms");
       return;
     }
-    const { name, command, extension: langExtension } = language;
+    const { name: languageName, command, extension: langExtension } = language;
     const fileTrail = (): string => {
       let trail = `code/project/${this.root}`;
       this.files.forEach((file) => {
@@ -90,7 +90,7 @@ class Dockable {
       })
       return trail;
     }
-    const statement = `${this.replaceDir("/src")}/dockable/dock.py ${this.volume} ${this.root} ${name} ${command} '${fileTrail()}'`;
+    const statement = `docker run --rm -d -it -v ${this.volume}:/code docked_code python3 /code/execute.py ${this.root} ${languageName} ${command} '${fileTrail()}'`
     exec(statement, (_, containerId) => {
       this.containerId = containerId;
     });
