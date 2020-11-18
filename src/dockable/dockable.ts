@@ -1,52 +1,33 @@
 import fs, { promises as fsp, } from "fs";
 import { exec } from 'child_process';
+
 import {v4 as uuid} from 'uuid';
 import { getLanguage } from "../utils/languages";
-import Dockerode from 'dockerode';
+import { File, Resolver, Result } from '../utils/interfaces';
+import { TIME_LIMIT_MS } from '../utils/contants';
 
-const TIMEOUT_BREAK = 5;
-
-export interface File {
-  name: string;
-  extension: string;
-  content: string;
-}
-
-interface Result {
-  stdout: string;
-  stderr: string;
-  executionTime: string;
-}
-
-interface CallbackContainer {
-  callback: (stdout: string, stderr: string, executionTime: string) => void
-}
+import Dockerode from 'dockerode';  
 
 class Dockable {
   id: string; 
-  root: string;
   stdin: string;
+  rootFile: string;
   files: File[];
-  callback: CallbackContainer;
-  encodedFiles: string;
-  payload: string;
+  resolver: Resolver;
   volume: string;
+  timeoutId: NodeJS.Timeout;
   containerId: string;
-  eventResult: NodeJS.ReadableStream | undefined;
+  information: string;
+  sniffedEvent: NodeJS.ReadableStream | undefined;
 
-  constructor(root: string, stdin: string, files: File[], callback: CallbackContainer) {
+  constructor(root: string, stdin: string, files: File[], resolver: Resolver) {
     this.id = uuid();
-    this.root = root;
     this.stdin = stdin;
+    this.rootFile = root;
     this.files = files;
-    this.callback = callback;
-    this.encodedFiles = Buffer.from(JSON.stringify(files)).toString("base64");
-    this.payload = `${this.replaceDir("/src")}/payload`;
-    this.volume = `${this.replaceDir("")}/volumes/${this.id}`;
-  }
-
-  public replaceDir(replace: string): string {
-    return __dirname.replace("/dist/dockable", replace);
+    this.resolver = resolver;
+    this.volume = `${this.replaceDist("")}/volumes/${this.id}`;
+    this.timeoutId = this.timeout();
   }
 
   public validateFiles(_: File[]): boolean {
@@ -59,9 +40,17 @@ class Dockable {
     this.sniff();
   }
 
+  private timeout(): NodeJS.Timeout {
+    return setTimeout(() => {
+      this.information = "exceeded the time limit"
+      this.dispose();
+      exec(`docker kill ${this.containerId}`);
+    }, TIME_LIMIT_MS);
+  }
+
   private createVolume(): Promise<void> {
     return new Promise((resolve, _) => {
-      exec(`mkdir ${this.volume} && mkdir ${this.volume}/project && cp ${this.replaceDir("/src")}/payload/* ${this.volume}`, () => {
+      exec(`mkdir ${this.volume} && mkdir ${this.volume}/project && cp ${this.replaceDist("/src")}/payload/* ${this.volume}`, () => {
         fs.writeFile(`${this.volume}/stdin.txt`, this.stdin.replace(/,/g, "\n"), (_) => {});
         this.files.forEach((file) => {
           const { name, extension, content } = file;
@@ -74,14 +63,14 @@ class Dockable {
   }
 
   private dock() {
-    const language = getLanguage(this.root);
+    const language = getLanguage(this.rootFile);
     if (!language) {
-      this.callback.callback("", "Unable to find a language corresponding to the specified extension.", "?ms");
+      this.resolver.resolve("", "Unable to find a language corresponding to the specified extension.", "?ms", this.information);
       return;
     }
     const { name: languageName, command, extension: langExtension } = language;
     const fileTrail = (): string => {
-      let trail = `code/project/${this.root}`;
+      let trail = `code/project/${this.rootFile}`;
       this.files.forEach((file) => {
         const { name, extension } = file;
         if (extension === langExtension) {
@@ -90,7 +79,7 @@ class Dockable {
       })
       return trail;
     }
-    const statement = `docker run --rm -d -it -v ${this.volume}:/code docked_code python3 /code/execute.py ${this.root} ${languageName} ${command} '${fileTrail()}'`
+    const statement = `docker run --rm -d -it --cpus=".5" -v ${this.volume}:/code docked_code python3 /code/execute.py ${this.rootFile} ${languageName} ${command} '${fileTrail()}'`
     exec(statement, (_, containerId) => {
       this.containerId = containerId;
     });
@@ -99,7 +88,7 @@ class Dockable {
   private sniff() {
     const docker = new Dockerode();
     docker.getEvents((error, result) => {
-      this.eventResult = result;
+      this.sniffedEvent = result;
       if (error) {
 
       } else {
@@ -111,10 +100,10 @@ class Dockable {
           if (this.containerId && this.containerId.includes(id)) {
             const { stdout, stderr, executionTime }: Result = await this.findResult();
             if (stdout !== "400") {
-              this.callback.callback(stdout, stderr, executionTime);
+              this.resolver.resolve(stdout, stderr, executionTime, this.information);
               this.dispose();
             } else {
-              this.callback.callback("", "Something went horribly wrong.", "")
+              this.resolver.resolve("", "", "", this.information)
             }
           }
         })
@@ -147,7 +136,12 @@ class Dockable {
   } 
 
   private dispose() {
+    clearTimeout(this.timeoutId)
     exec(`rm -rf ${this.volume}`);
+  }
+
+  private replaceDist(replace: string): string {
+    return __dirname.replace("/dist/dockable", replace);
   }
 }
 
