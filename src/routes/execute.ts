@@ -9,11 +9,12 @@ const router = express.Router();
 router.post('/execute', (req, res) => {
   const { root, stdin, files }: {root: string, stdin: string, files: File[]} = req.body;
   const resolver = {
-  resolve: (stdout: string, stderr: string, executionTime: string, information: string) => {
+  resolve: (stdout: string, stderr: string, executionTime: string, startTime: string, information: string) => {
     res.status(200).send({
         "stdout": stdout,
         "stderr": stderr,
         "execution-time": executionTime,
+        "total-time": startTime,
         "information": information
       });
     }

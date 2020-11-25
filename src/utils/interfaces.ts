@@ -8,8 +8,9 @@ export interface Result {
   stdout: string;
   stderr: string;
   executionTime: string;
+  totalTime: string;
 }
 
 export interface Resolver {
-  resolve: (stdout: string, stderr: string, executionTime: string, information: string) => void;
+  resolve: (stdout: string, stderr: string, executionTime: string, startTime: string, information: string) => void;
 }

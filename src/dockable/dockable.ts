@@ -2,7 +2,7 @@ import fs, { promises as fsp, } from "fs";
 import { exec } from 'child_process';
 
 import {v4 as uuid} from 'uuid';
-import { getLanguage } from "../utils/languages";
+import { getLanguage, Language } from "../utils/languages";
 import { File, Resolver, Result } from '../utils/interfaces';
 import { TIME_LIMIT_MS } from '../utils/contants';
 
@@ -10,6 +10,8 @@ import Dockerode from 'dockerode';
 
 class Dockable {
   id: string; 
+  language: Language;
+  startTime: number;
   stdin: string;
   rootFile: string;
   files: File[];
@@ -22,6 +24,7 @@ class Dockable {
 
   constructor(root: string, stdin: string, files: File[], resolver: Resolver) {
     this.id = uuid();
+    this.startTime = Date.now();
     this.stdin = stdin;
     this.rootFile = root;
     this.files = files;
@@ -35,6 +38,12 @@ class Dockable {
   }
 
   public async execute() {
+    const language = getLanguage(this.rootFile);
+    if (!language) {
+      this.resolver.resolve("", "Unable to find a language corresponding to the specified extension.", "?ms", "", this.information);
+      return;
+    }
+    this.language = language;
     await this.createVolume();
     this.dock();
     this.sniff();
@@ -63,12 +72,7 @@ class Dockable {
   }
 
   private dock() {
-    const language = getLanguage(this.rootFile);
-    if (!language) {
-      this.resolver.resolve("", "Unable to find a language corresponding to the specified extension.", "?ms", this.information);
-      return;
-    }
-    const { name: languageName, command, extension: langExtension } = language;
+    const { name: languageName, command, extension: langExtension } = this.language;
     const fileTrail = (): string => {
       let trail = `code/project/${this.rootFile}`;
       this.files.forEach((file) => {
@@ -98,12 +102,12 @@ class Dockable {
             return;
           }
           if (this.containerId && this.containerId.includes(id)) {
-            const { stdout, stderr, executionTime }: Result = await this.findResult();
+            const { stdout, stderr, executionTime, totalTime }: Result = await this.findResult();
             if (stdout !== "400") {
-              this.resolver.resolve(stdout, stderr, executionTime, this.information);
+              this.resolver.resolve(stdout, stderr, executionTime, totalTime, this.information);
               this.dispose();
             } else {
-              this.resolver.resolve("", "", "", this.information)
+              this.resolver.resolve("", "", "", this.information, "")
             }
           }
         })
@@ -131,6 +135,7 @@ class Dockable {
           stdout,
           stderr,
           executionTime: time ? `${time}ms` : "failed to fetch time",
+          totalTime: `${Date.now() - this.startTime}ms`,
         });
       });
   } 
